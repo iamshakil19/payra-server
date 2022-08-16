@@ -15,7 +15,26 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
 async function run() {
     try {
         await client.connect();
-        console.log("database connected");
+        const bloodDonorRequestCollection = client.db('payra').collection('donor-request')
+        const bloodDonorCollection = client.db('payra').collection('donor-list')
+
+
+        /* 
+            all get api
+        */
+        app.get('/donor-list', async (req, res) => {
+            const donor = await bloodDonorCollection.find().toArray()
+            res.send(donor)
+        })
+
+        /* 
+            all post api
+        */
+        app.post('/donor-request', async (req, res) => {
+            const newDonorRequest = req.body;
+            const result = await bloodDonorRequestCollection.insertOne(newDonorRequest);
+            res.send(result);
+        })
 
     }
     finally {
