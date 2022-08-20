@@ -15,24 +15,30 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
 async function run() {
     try {
         await client.connect();
-        const bloodDonorRequestCollection = client.db('payra').collection('donor-request')
         const bloodDonorCollection = client.db('payra').collection('donor-list')
 
-
-        /* 
-            all get api
-        */
-        app.get('/donor-list', async (req, res) => {
-            const donor = await bloodDonorCollection.find().toArray()
-            res.send(donor)
+        /* =======================
+            ALL GET API
+            ======================== */
+        app.get('/donor-request', async (req, res) => {
+            const status = "pending"
+            const query = {status: status}
+            const pendingRequest = await bloodDonorCollection.find(query).toArray()
+            res.send(pendingRequest)
+        })
+        app.get('/verified-donor', async (req, res) => {
+            const status = "verified"
+            const query = {status: status}
+            const verifiedDonor = await bloodDonorCollection.find(query).toArray()
+            res.send(verifiedDonor)
         })
 
-        /* 
-            all post api
-        */
+        /* =======================
+            ALL POST API
+            ======================== */
         app.post('/donor-request', async (req, res) => {
-            const newDonorRequest = req.body;
-            const result = await bloodDonorRequestCollection.insertOne(newDonorRequest);
+            const donorRequest = req.body;
+            const result = await bloodDonorCollection.insertOne(donorRequest);
             res.send(result);
         })
 
@@ -42,7 +48,6 @@ async function run() {
     }
 }
 run().catch(console.dir)
-
 
 app.get('/', (req, res) => {
     res.send('running payra server')
