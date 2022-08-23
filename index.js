@@ -3,7 +3,7 @@ const cors = require('cors');
 const app = express();
 const port = process.env.PORT || 5000;
 require('dotenv').config();
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 
 // middleware
 app.use(cors());
@@ -22,13 +22,13 @@ async function run() {
             ======================== */
         app.get('/donor-request', async (req, res) => {
             const status = "pending"
-            const query = {status: status}
-            const pendingRequest = await bloodDonorCollection.find(query).toArray()
+            const query = { status: status }
+            const pendingRequest = (await bloodDonorCollection.find(query).toArray()).reverse()
             res.send(pendingRequest)
         })
         app.get('/verified-donor', async (req, res) => {
             const status = "verified"
-            const query = {status: status}
+            const query = { status: status }
             const verifiedDonor = await bloodDonorCollection.find(query).toArray()
             res.send(verifiedDonor)
         })
@@ -41,6 +41,26 @@ async function run() {
             const result = await bloodDonorCollection.insertOne(donorRequest);
             res.send(result);
         })
+
+        /* =======================
+            ALL PATCH API
+        ======================== */
+        app.patch('/donorStatus/:id', async (req, res) => {
+            const id = req.params.id;
+            const donorInfo = req.body
+            const filter = { _id: ObjectId(id) }
+            const updateDoc = {
+                $set: {
+                    status: donorInfo.status
+                }
+            }
+            const updatedDonorInfo = await bloodDonorCollection.updateOne(filter, updateDoc)
+            res.send(updateDoc)
+        })
+
+        /* =======================
+            ALL DELETE API
+        ======================== */
 
     }
     finally {
