@@ -16,6 +16,7 @@ async function run() {
     try {
         await client.connect();
         const bloodDonorCollection = client.db('payra').collection('donor-list')
+        const bloodRequestCollection = client.db('payra').collection('blood-request-list')
 
         /* =======================
             ALL GET API
@@ -29,7 +30,7 @@ async function run() {
         app.get('/verified-donor', async (req, res) => {
             const status = "verified"
             const query = { status: status }
-            const verifiedDonor = await bloodDonorCollection.find(query).toArray()
+            const verifiedDonor = (await bloodDonorCollection.find(query).toArray()).reverse()
             res.send(verifiedDonor)
         })
 
@@ -39,6 +40,12 @@ async function run() {
         app.post('/donor-request', async (req, res) => {
             const donorRequest = req.body;
             const result = await bloodDonorCollection.insertOne(donorRequest);
+            res.send(result);
+        })
+
+        app.post('/blood-request', async (req, res) => {
+            const bloodRequest = req.body;
+            const result = await bloodRequestCollection.insertOne(bloodRequest);
             res.send(result);
         })
 
