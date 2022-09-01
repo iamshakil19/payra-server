@@ -21,6 +21,18 @@ async function run() {
         /* =======================
             ALL GET API
             ======================== */
+        app.get('/incomplete-blood-request', async (req, res) => {
+            const status = "incomplete"
+            const query = { status: status }
+            const incompleteRequest = (await bloodRequestCollection.find(query).toArray()).reverse()
+            res.send(incompleteRequest)
+        })
+        app.get('/complete-blood-request', async (req, res) => {
+            const status = "complete"
+            const query = { status: status }
+            const completeRequest = (await bloodRequestCollection.find(query).toArray()).reverse()
+            res.send(completeRequest)
+        })
         app.get('/donor-request', async (req, res) => {
             const status = "pending"
             const query = { status: status }
@@ -65,13 +77,33 @@ async function run() {
             res.send(updateDoc)
         })
 
+        app.patch('/blood-request-status/:id', async (req, res) => {
+            const id = req.params.id;
+            const bloodRequestInfo = req.body
+            const filter = { _id: ObjectId(id) }
+            const updateDoc = {
+                $set: {
+                    status: bloodRequestInfo.status
+                }
+            }
+            const updatedBloodRequestInfo = await bloodRequestCollection.updateOne(filter, updateDoc)
+            res.send(updateDoc)
+        })
+
         /* =======================
             ALL DELETE API
         ======================== */
         app.delete('/donorRequest/:id', async (req, res) => {
             const id = req.params.id;
-            const query = { _id: ObjectId(id)}
+            const query = { _id: ObjectId(id) }
             const result = await bloodDonorCollection.deleteOne(query)
+            res.send(result)
+        })
+
+        app.delete('/deleteBloodRequest/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) }
+            const result = await bloodRequestCollection.deleteOne(query)
             res.send(result)
         })
 
