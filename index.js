@@ -17,6 +17,19 @@ async function run() {
         await client.connect();
         const bloodDonorCollection = client.db('payra').collection('donor-list')
         const bloodRequestCollection = client.db('payra').collection('blood-request-list')
+        const userCollection = client.db('payra').collection('users')
+
+        app.put('/user/:email', async (req, res) => {
+            const email = req.params.email;
+            const user = req.body;
+            const filter = { email: email };
+            const options = { upsert: true }
+            const updateDoc = {
+                $set: user
+            };
+            const result = await userCollection.updateOne(filter, updateDoc, options);
+            res.send(result)
+        })
 
         /* =======================
             ALL GET API
