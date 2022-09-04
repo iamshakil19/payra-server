@@ -45,41 +45,66 @@ async function run() {
                 $set: user
             };
             const result = await userCollection.updateOne(filter, updateDoc, options);
-            const token = jwt.sign({ email: email }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1m' })
+            const token = jwt.sign({ email: email }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '2d' })
             res.send({ result, token })
         })
 
         /* =======================
-            ALL GET API
+            ALL USER API
             ======================== */
-        app.get('/incomplete-blood-request', async (req, res) => {
-            const status = "incomplete"
-            const query = { status: status }
-            const incompleteRequest = (await bloodRequestCollection.find(query).toArray()).reverse()
-            res.send(incompleteRequest)
+        app.get('/users', verifyJWT, async (req, res) => {
+            const users = await userCollection.find().toArray()
+            res.send(users)
         })
-        app.get('/complete-blood-request', async (req, res) => {
-            const status = "complete"
-            const query = { status: status }
-            const completeRequest = (await bloodRequestCollection.find(query).toArray()).reverse()
-            res.send(completeRequest)
+
+        app.delete('/deleteUser/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) }
+            const result = await userCollection.deleteOne(query)
+            res.send(result)
         })
+        app.put('/user/admin/:email', verifyJWT, async (req, res) => {
+            const email = req.params.email;
+            const requester = req?.decoded?.email;
+            const requesterAccount = await userCollection.findOne({ email: requester });
+            if (requesterAccount.role === 'superAdmin') {
+                const filter = { email: email };
+                const updateDoc = {
+                    $set: { role: 'admin' },
+                };
+                const result = await userCollection.updateOne(filter, updateDoc)
+                res.send(result)
+            }
+            else{
+                res.status(403).send({message: 'forbidden access'})
+            }
+
+            app.get('/admin/:email', async (req, res) => {
+                const email = req.params.email;
+                const user = await userCollection.findOne({email: email});
+                const isAdmin = user.role === 'superAdmin' && user.role === 'admin';
+                res.send({admin: isAdmin})
+            })
+
+        })
+
+        /* =======================
+            ALL BLOOD DONOR API
+            ======================== */
         app.get('/donor-request', async (req, res) => {
             const status = "pending"
             const query = { status: status }
             const pendingRequest = (await bloodDonorCollection.find(query).toArray()).reverse()
             res.send(pendingRequest)
         })
-        app.get('/verified-donor', async (req, res) => {
+
+        app.get('/verified-donor', verifyJWT, async (req, res) => {
             const status = "verified"
             const query = { status: status }
             const verifiedDonor = (await bloodDonorCollection.find(query).toArray()).reverse()
             res.send(verifiedDonor)
         })
 
-        /* =======================
-            ALL POST API
-            ======================== */
         app.post('/donor-request', async (req, res) => {
             const donorRequest = req.body;
             const result = await bloodDonorCollection.insertOne(donorRequest);
@@ -92,9 +117,6 @@ async function run() {
             res.send(result);
         })
 
-        /* =======================
-            ALL PATCH API
-        ======================== */
         app.patch('/donorStatus/:id', async (req, res) => {
             const id = req.params.id;
             const donorInfo = req.body
@@ -108,6 +130,29 @@ async function run() {
             res.send(updateDoc)
         })
 
+        app.delete('/donorRequest/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) }
+            const result = await bloodDonorCollection.deleteOne(query)
+            res.send(result)
+        })
+
+        /* =======================
+            ALL BLOOD REQUEST API
+            ======================== */
+        app.get('/incomplete-blood-request', async (req, res) => {
+            const status = "incomplete"
+            const query = { status: status }
+            const incompleteRequest = (await bloodRequestCollection.find(query).toArray()).reverse()
+            res.send(incompleteRequest)
+        })
+        app.get('/complete-blood-request', async (req, res) => {
+            const status = "complete"
+            const query = { status: status }
+            const completeRequest = (await bloodRequestCollection.find(query).toArray()).reverse()
+            res.send(completeRequest)
+        })
+
         app.patch('/blood-request-status/:id', async (req, res) => {
             const id = req.params.id;
             const bloodRequestInfo = req.body
@@ -119,16 +164,6 @@ async function run() {
             }
             const updatedBloodRequestInfo = await bloodRequestCollection.updateOne(filter, updateDoc)
             res.send(updateDoc)
-        })
-
-        /* =======================
-            ALL DELETE API
-        ======================== */
-        app.delete('/donorRequest/:id', async (req, res) => {
-            const id = req.params.id;
-            const query = { _id: ObjectId(id) }
-            const result = await bloodDonorCollection.deleteOne(query)
-            res.send(result)
         })
 
         app.delete('/deleteBloodRequest/:id', async (req, res) => {
