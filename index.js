@@ -57,6 +57,13 @@ async function run() {
             res.send(users)
         })
 
+        app.get('/all-admin', async (req, res) => {
+            const role = "admin"
+            const query = { role: role }
+            const allAdmin = (await userCollection.find(query).toArray()).reverse()
+            res.send(allAdmin)
+        })
+
         app.delete('/deleteUser/:id', async (req, res) => {
             const id = req.params.id;
             const query = { _id: ObjectId(id) }
@@ -75,16 +82,19 @@ async function run() {
                 const result = await userCollection.updateOne(filter, updateDoc)
                 res.send(result)
             }
-            else{
-                res.status(403).send({message: 'forbidden access'})
+            else {
+                res.status(403).send({ message: 'forbidden access' })
             }
 
-            app.get('/admin/:email', async (req, res) => {
+            app.get('/admin/:email', verifyJWT, async (req, res) => {
                 const email = req.params.email;
-                const user = await userCollection.findOne({email: email});
-                const isAdmin = user.role === 'superAdmin' && user.role === 'admin';
-                res.send({admin: isAdmin})
+                console.log(email);
+                const user = await userCollection.findOne({ email: email })
+                const isAdmin = user.role === 'admin';
+                res.send({ admin: isAdmin })
             })
+
+
 
         })
 
@@ -143,11 +153,11 @@ async function run() {
         app.get('/incomplete-blood-request', async (req, res) => {
             const status = "incomplete"
             const query = { status: status }
-            const incompleteRequest = (await bloodRequestCollection.find(query).toArray()).reverse()
+            const incompleteRequest = await bloodRequestCollection.find(query).toArray()
             res.send(incompleteRequest)
         })
         app.get('/complete-blood-request', async (req, res) => {
-            const status = "complete"
+            const status = "done"
             const query = { status: status }
             const completeRequest = (await bloodRequestCollection.find(query).toArray()).reverse()
             res.send(completeRequest)
