@@ -35,7 +35,26 @@ async function run() {
         const bloodDonorCollection = client.db('payra').collection('donor-list')
         const bloodRequestCollection = client.db('payra').collection('blood-request-list')
         const userCollection = client.db('payra').collection('users')
+        const adminContactCollection = client.db('payra').collection('admin-contact')
 
+
+        /* =======================
+            ALL Admin Contact API
+            ======================== */
+        app.post('/admin-contact', async (req, res) => {
+            const contactInfo = req.body;
+            const result = await adminContactCollection.insertOne(contactInfo);
+            res.send(result);
+        })
+
+        app.get('/contacts', async (req, res) => {
+            const contacts = await adminContactCollection.find().toArray()
+            res.send(contacts)
+        })
+
+        /* =======================
+            ALL USER API
+            ======================== */
         app.put('/user/:email', async (req, res) => {
             const email = req.params.email;
             const user = req.body;
@@ -49,17 +68,15 @@ async function run() {
             res.send({ result, token })
         })
 
-        /* =======================
-            ALL USER API
-            ======================== */
         app.get('/users', verifyJWT, async (req, res) => {
             const users = await userCollection.find().toArray()
             res.send(users)
         })
 
         app.get('/all-admin', async (req, res) => {
-            const role = "admin"
-            const query = { role: role }
+            const admin = "admin"
+            const superAdmin = "superAdmin"
+            const query = { role: admin }
             const allAdmin = (await userCollection.find(query).toArray()).reverse()
             res.send(allAdmin)
         })
