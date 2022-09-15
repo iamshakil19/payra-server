@@ -39,7 +39,7 @@ async function run() {
 
 
         /* =======================
-            ALL Admin Contact API
+            ALL Admin API
             ======================== */
         app.post('/admin-contact', async (req, res) => {
             const contactInfo = req.body;
@@ -50,6 +50,60 @@ async function run() {
         app.get('/contacts', async (req, res) => {
             const contacts = await adminContactCollection.find().toArray()
             res.send(contacts)
+        })
+
+        app.get('/all-admin', verifyJWT, async (req, res) => {
+            const query = { role: { $in: ["admin", "superAdmin"] } }
+            const allAdmin = (await userCollection.find(query).toArray()).reverse()
+            res.send(allAdmin)
+        })
+
+        app.get('/admin/:email', verifyJWT, async (req, res) => {
+            const email = req.params.email;
+            const user = await userCollection.findOne({ email: email })
+            const isAdmin = ((user.role === "superAdmin" || user.role === "admin") ? true : false)
+            console.log(isAdmin);
+            res.send({ admin: isAdmin })
+        })
+
+        app.delete('/delete-contact/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) }
+            const result = await adminContactCollection.deleteOne(query)
+            res.send(result)
+        })
+
+        app.patch('/contact/:id', async (req, res) => {
+            const id = req.params.id;
+            const contact = req.body
+            const filter = { _id: ObjectId(id) }
+            const updatedDoc = {
+                $set: {
+                    name: contact.name,
+                    number1: contact.number1,
+                    number2: contact.number2
+                }
+            }
+            const updatedContact = await adminContactCollection.updateOne(filter, updatedDoc)
+            res.send({ updatedDoc, success: true });
+        })
+
+        app.patch('/admin/accessibility/:email', verifyJWT, async (req, res) => {
+            const email = req.params.email;
+            const newRole = req.body.role;
+            const requester = req?.decoded?.email;
+            const requesterAccount = await userCollection.findOne({ email: requester });
+            if (requesterAccount.role === 'superAdmin') {
+                const filter = { email: email };
+                const updateDoc = {
+                    $set: { role: newRole },
+                };
+                const result = await userCollection.updateOne(filter, updateDoc)
+                res.send(result)
+            }
+            else {
+                res.status(403).send({ message: 'forbidden access' })
+            }
         })
 
         /* =======================
@@ -73,20 +127,13 @@ async function run() {
             res.send(users)
         })
 
-        app.get('/all-admin', async (req, res) => {
-            const admin = "admin"
-            const superAdmin = "superAdmin"
-            const query = { role: admin }
-            const allAdmin = (await userCollection.find(query).toArray()).reverse()
-            res.send(allAdmin)
-        })
-
         app.delete('/deleteUser/:id', async (req, res) => {
             const id = req.params.id;
             const query = { _id: ObjectId(id) }
             const result = await userCollection.deleteOne(query)
             res.send(result)
         })
+
         app.put('/user/admin/:email', verifyJWT, async (req, res) => {
             const email = req.params.email;
             const requester = req?.decoded?.email;
@@ -102,23 +149,12 @@ async function run() {
             else {
                 res.status(403).send({ message: 'forbidden access' })
             }
-
-            app.get('/admin/:email', verifyJWT, async (req, res) => {
-                const email = req.params.email;
-                console.log(email);
-                const user = await userCollection.findOne({ email: email })
-                const isAdmin = user.role === 'admin';
-                res.send({ admin: isAdmin })
-            })
-
-
-
         })
 
         /* =======================
             ALL BLOOD DONOR API
             ======================== */
-        app.get('/donor-request', async (req, res) => {
+        app.get('/donor-request', verifyJWT, async (req, res) => {
             const status = "pending"
             const query = { status: status }
             const pendingRequest = (await bloodDonorCollection.find(query).toArray()).reverse()
@@ -167,13 +203,13 @@ async function run() {
         /* =======================
             ALL BLOOD REQUEST API
             ======================== */
-        app.get('/incomplete-blood-request', async (req, res) => {
+        app.get('/incomplete-blood-request', verifyJWT, async (req, res) => {
             const status = "incomplete"
             const query = { status: status }
             const incompleteRequest = await bloodRequestCollection.find(query).toArray()
             res.send(incompleteRequest)
         })
-        app.get('/complete-blood-request', async (req, res) => {
+        app.get('/complete-blood-request', verifyJWT, async (req, res) => {
             const status = "done"
             const query = { status: status }
             const completeRequest = (await bloodRequestCollection.find(query).toArray()).reverse()
