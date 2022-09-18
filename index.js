@@ -176,16 +176,22 @@ async function run() {
             const verifiedDonor = (await bloodDonorCollection.find(query).toArray()).reverse()
             res.send(verifiedDonor)
         })
+        app.get('/available-donor', verifyJWT, async (req, res) => {
+            const status = "verified"
+            const query = { status: status, available: true }
+            const verifiedDonor = (await bloodDonorCollection.find(query).toArray()).reverse()
+            res.send(verifiedDonor)
+        })
+        app.get('/unavailable-donor', verifyJWT, async (req, res) => {
+            const status = "verified"
+            const query = { status: status, available: false }
+            const verifiedDonor = (await bloodDonorCollection.find(query).toArray()).reverse()
+            res.send(verifiedDonor)
+        })
 
         app.post('/donor-request', async (req, res) => {
             const donorRequest = req.body;
             const result = await bloodDonorCollection.insertOne(donorRequest);
-            res.send(result);
-        })
-
-        app.post('/blood-request', async (req, res) => {
-            const bloodRequest = req.body;
-            const result = await bloodRequestCollection.insertOne(bloodRequest);
             res.send(result);
         })
 
@@ -195,7 +201,9 @@ async function run() {
             const filter = { _id: ObjectId(id) }
             const updateDoc = {
                 $set: {
-                    status: donorInfo.status
+                    status: donorInfo.status,
+                    available: true,
+                    donationCount: 0
                 }
             }
             const updatedDonorInfo = await bloodDonorCollection.updateOne(filter, updateDoc)
@@ -223,6 +231,12 @@ async function run() {
             const query = { status: status }
             const completeRequest = (await bloodRequestCollection.find(query).toArray()).reverse()
             res.send(completeRequest)
+        })
+
+        app.post('/blood-request', async (req, res) => {
+            const bloodRequest = req.body;
+            const result = await bloodRequestCollection.insertOne(bloodRequest);
+            res.send(result);
         })
 
         app.patch('/blood-request-status/:id', async (req, res) => {
