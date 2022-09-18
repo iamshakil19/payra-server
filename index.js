@@ -63,14 +63,23 @@ async function run() {
             const user = await userCollection.findOne({ email: email })
             const isAdmin = ((user.role === "superAdmin" || user.role === "admin") ? true : false)
             console.log(isAdmin);
-            res.send({ admin: isAdmin })
+            const adminRole = user.role
+            res.send({ admin: isAdmin, role: adminRole })
         })
 
-        app.delete('/delete-contact/:id', async (req, res) => {
+        app.delete('/delete-contact/:id', verifyJWT, async (req, res) => {
             const id = req.params.id;
-            const query = { _id: ObjectId(id) }
-            const result = await adminContactCollection.deleteOne(query)
-            res.send(result)
+            const requester = req?.decoded?.email;
+            const requesterAccount = await userCollection.findOne({ email: requester });
+            if (requesterAccount.role === 'superAdmin') {
+                const query = { _id: ObjectId(id) }
+                const result = await adminContactCollection.deleteOne(query)
+                res.send(result)
+            }
+            else {
+                res.status(403).send({ message: 'forbidden access' })
+            }
+
         })
 
         app.patch('/contact/:id', async (req, res) => {
