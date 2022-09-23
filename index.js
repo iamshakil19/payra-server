@@ -210,6 +210,49 @@ async function run() {
             res.send(updateDoc)
         })
 
+        app.patch('/donationCount/:id', async (req, res) => {
+            const id = req.params.id;
+            const donationTime = req.body
+            console.log(donationTime);
+            const filter = { _id: ObjectId(id) }
+
+            const updateDoc = {
+                $set: {
+                    available: false,
+                    time: donationTime.donateTime
+                },
+                $inc: {
+                    donationCount: + 1
+                }
+            }
+            const updatedDonorInfo = await bloodDonorCollection.updateOne(filter, updateDoc)
+            res.send(updateDoc)
+        })
+        
+        app.patch('/handleAvailability/:id', async (req, res) => {
+            const id = req.params.id;
+            const filter = { _id: ObjectId(id) }
+            const updateDoc = {
+                $set: {
+                    available: true
+                }
+            }
+            const updatedDonorInfo = await bloodDonorCollection.updateOne(filter, updateDoc)
+            res.send(updateDoc)
+        })
+
+        app.put('/donationDate/:id', async (req, res) => {
+            const id = req.params.id;
+            const filter = { _id: ObjectId(id) }
+            console.log(id, filter);
+
+            const updateDoc = {
+                $setOnInsert: { dateAdded: new Date() }
+            }
+            const result = await bloodDonorCollection.updateOne(filter, updateDoc)
+            res.send(result)
+        })
+
         app.delete('/donorRequest/:id', async (req, res) => {
             const id = req.params.id;
             const query = { _id: ObjectId(id) }
