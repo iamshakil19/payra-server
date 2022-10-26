@@ -165,7 +165,7 @@ async function run() {
             ======================== */
 
         app.get('/top-donor', verifyJWT, async (req, res) => {
-            const sortDonor = {donationCount : -1}
+            const sortDonor = { donationCount: -1 }
             const topDonor = await bloodDonorCollection.find().sort(sortDonor).toArray()
             res.send(topDonor)
         })
@@ -265,10 +265,17 @@ async function run() {
             res.send(incompleteRequest)
         })
         app.get('/complete-blood-request', verifyJWT, async (req, res) => {
+            const limit = Number(req.query.limit)
+            const skip = Number(req.query.pageNumber)
+            console.log(limit, "skip", skip);
             const status = "done"
             const query = { status: status }
-            const completeRequest = (await bloodRequestCollection.find(query).toArray()).reverse()
-            res.send(completeRequest)
+            const sortByTime = { submissionTime: -1 }
+            const completeRequest = await bloodRequestCollection.find(query).skip((skip - 1) * limit).limit(limit).sort(sortByTime).toArray()
+            const count = await bloodRequestCollection.estimatedDocumentCount()
+            const pageCount = Math.ceil(count / limit)
+
+            res.send({ completeBloodRequestList: completeRequest, totalCount: count, pageCount: pageCount })
         })
 
         app.post('/blood-request', async (req, res) => {
