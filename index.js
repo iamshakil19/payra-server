@@ -259,22 +259,26 @@ async function run() {
             ALL BLOOD REQUEST API
             ======================== */
         app.get('/incomplete-blood-request', verifyJWT, async (req, res) => {
-            const status = "incomplete"
-            const query = { status: status }
-            const incompleteRequest = await bloodRequestCollection.find(query).toArray()
-            res.send(incompleteRequest)
+            const limit = Number(req.query.limit);
+            const skip = Number(req.query.pageNumber);
+            const status = "incomplete";
+            const query = { status: status };
+            const incompleteRequest = await bloodRequestCollection.find(query).skip(limit * skip).limit(limit).toArray();
+            const incompleteBloodLength = await bloodRequestCollection.find(query).toArray();
+            const count = incompleteBloodLength.length;
+            const pageCount = Math.ceil(count / limit);
+            res.send({ incompleteBloodRequestList: incompleteRequest, totalCount: count, pageCount: pageCount })
         })
         app.get('/complete-blood-request', verifyJWT, async (req, res) => {
             const limit = Number(req.query.limit)
             const skip = Number(req.query.pageNumber)
-            console.log(limit, "skip", skip);
             const status = "done"
             const query = { status: status }
             const sortByTime = { submissionTime: -1 }
-            const completeRequest = await bloodRequestCollection.find(query).skip((skip - 1) * limit).limit(limit).sort(sortByTime).toArray()
-            const count = await bloodRequestCollection.estimatedDocumentCount()
+            const completeRequest = await bloodRequestCollection.find(query).skip(limit * skip).limit(limit).sort(sortByTime).toArray()
+            const completeBloodLength = await bloodRequestCollection.find(query).toArray()
+            const count = completeBloodLength.length
             const pageCount = Math.ceil(count / limit)
-
             res.send({ completeBloodRequestList: completeRequest, totalCount: count, pageCount: pageCount })
         })
 
