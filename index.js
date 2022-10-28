@@ -132,8 +132,13 @@ async function run() {
         })
 
         app.get('/users', verifyJWT, async (req, res) => {
-            const users = await userCollection.find().toArray()
-            res.send(users)
+            const limit = Number(req.query.limit);
+            const skip = Number(req.query.pageNumber);
+            const users = await userCollection.find().skip(limit * skip).limit(limit).toArray()
+            const count = await userCollection.estimatedDocumentCount()
+            console.log(count);
+            const pageCount = Math.ceil(count / limit);
+            res.send({ users: users, totalCount: count, pageCount: pageCount })
         })
 
         app.delete('/deleteUser/:id', async (req, res) => {
