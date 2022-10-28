@@ -176,10 +176,15 @@ async function run() {
         })
 
         app.get('/donor-request', verifyJWT, async (req, res) => {
+            const limit = Number(req.query.limit);
+            const skip = Number(req.query.pageNumber);
             const status = "pending"
             const query = { status: status }
-            const pendingRequest = (await bloodDonorCollection.find(query).toArray()).reverse()
-            res.send(pendingRequest)
+            const pendingRequest = await bloodDonorCollection.find(query).skip(limit * skip).limit(limit).toArray()
+            const pendingRequestLength = await bloodDonorCollection.find(query).toArray();
+            const count = pendingRequestLength.length;
+            const pageCount = Math.ceil(count / limit);
+            res.send({ allDonorRequest: pendingRequest, totalCount: count, pageCount: pageCount })
         })
 
         app.get('/verified-donor', verifyJWT, async (req, res) => {
@@ -272,6 +277,7 @@ async function run() {
             const incompleteBloodLength = await bloodRequestCollection.find(query).toArray();
             const count = incompleteBloodLength.length;
             const pageCount = Math.ceil(count / limit);
+            
             res.send({ incompleteBloodRequestList: incompleteRequest, totalCount: count, pageCount: pageCount })
         })
         app.get('/complete-blood-request', verifyJWT, async (req, res) => {
@@ -284,6 +290,7 @@ async function run() {
             const completeBloodLength = await bloodRequestCollection.find(query).toArray()
             const count = completeBloodLength.length
             const pageCount = Math.ceil(count / limit)
+            console.log(pageCount, "complete");
             res.send({ completeBloodRequestList: completeRequest, totalCount: count, pageCount: pageCount })
         })
 
