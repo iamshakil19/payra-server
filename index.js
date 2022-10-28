@@ -54,7 +54,9 @@ async function run() {
 
         app.get('/all-admin', verifyJWT, async (req, res) => {
             const query = { role: { $in: ["admin", "superAdmin"] } }
-            const allAdmin = (await userCollection.find(query).toArray()).reverse()
+            const mySort = {email: 1}
+            const allAdmin = await userCollection.find(query).sort(mySort).toArray()
+            console.log(allAdmin);
             res.send(allAdmin)
         })
 
@@ -134,7 +136,8 @@ async function run() {
         app.get('/users', verifyJWT, async (req, res) => {
             const limit = Number(req.query.limit);
             const skip = Number(req.query.pageNumber);
-            const users = await userCollection.find().skip(limit * skip).limit(limit).toArray()
+            const mySort = {email: 1}
+            const users = await userCollection.find().skip(limit * skip).limit(limit).sort(mySort).toArray()
             const count = await userCollection.estimatedDocumentCount()
             console.log(count);
             const pageCount = Math.ceil(count / limit);
@@ -194,16 +197,26 @@ async function run() {
             res.send(verifiedDonor)
         })
         app.get('/available-donor', verifyJWT, async (req, res) => {
+            const limit = Number(req.query.limit);
+            const skip = Number(req.query.pageNumber);
             const status = "verified"
             const query = { status: status, available: true }
-            const verifiedDonor = (await bloodDonorCollection.find(query).toArray()).reverse()
-            res.send(verifiedDonor)
+            const verifiedDonor = await bloodDonorCollection.find(query).skip(limit * skip).limit(limit).toArray()
+            const availableBloodLength = await bloodDonorCollection.find(query).toArray();
+            const count = availableBloodLength.length;
+            const pageCount = Math.ceil(count / limit)
+            res.send({ availableDonorList: verifiedDonor, totalCount: count, pageCount: pageCount })
         })
         app.get('/unavailable-donor', verifyJWT, async (req, res) => {
+            const limit = Number(req.query.limit);
+            const skip = Number(req.query.pageNumber);
             const status = "verified"
             const query = { status: status, available: false }
-            const verifiedDonor = (await bloodDonorCollection.find(query).toArray()).reverse()
-            res.send(verifiedDonor)
+            const verifiedDonor = await bloodDonorCollection.find(query).skip(limit * skip).limit(limit).toArray()
+            const unavailableBloodLength = await bloodDonorCollection.find(query).toArray();
+            const count = unavailableBloodLength.length;
+            const pageCount = Math.ceil(count / limit)
+            res.send({ unavailableDonorList: verifiedDonor, totalCount: count, pageCount: pageCount })
         })
 
         app.post('/donor-request', async (req, res) => {
