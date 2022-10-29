@@ -54,9 +54,8 @@ async function run() {
 
         app.get('/all-admin', verifyJWT, async (req, res) => {
             const query = { role: { $in: ["admin", "superAdmin"] } }
-            const mySort = {email: 1}
+            const mySort = { email: 1 }
             const allAdmin = await userCollection.find(query).sort(mySort).toArray()
-            console.log(allAdmin);
             res.send(allAdmin)
         })
 
@@ -136,7 +135,7 @@ async function run() {
         app.get('/users', verifyJWT, async (req, res) => {
             const limit = Number(req.query.limit);
             const skip = Number(req.query.pageNumber);
-            const mySort = {email: 1}
+            const mySort = { email: 1 }
             const users = await userCollection.find().skip(limit * skip).limit(limit).sort(mySort).toArray()
             const count = await userCollection.estimatedDocumentCount()
             console.log(count);
@@ -192,16 +191,19 @@ async function run() {
 
         app.get('/verified-donor', verifyJWT, async (req, res) => {
             const status = "verified"
+            const mySort = {acceptedTime: -1}
             const query = { status: status }
-            const verifiedDonor = (await bloodDonorCollection.find(query).toArray()).reverse()
+            const verifiedDonor = await bloodDonorCollection.find(query).sort(mySort).toArray()
             res.send(verifiedDonor)
         })
         app.get('/available-donor', verifyJWT, async (req, res) => {
             const limit = Number(req.query.limit);
             const skip = Number(req.query.pageNumber);
+            const userSortBy = req.query.sortByDonateCount;
+            const mySort = { [userSortBy]: -1 }
             const status = "verified"
             const query = { status: status, available: true }
-            const verifiedDonor = await bloodDonorCollection.find(query).skip(limit * skip).limit(limit).toArray()
+            const verifiedDonor = await bloodDonorCollection.find(query).skip(limit * skip).limit(limit).sort(mySort).toArray()
             const availableBloodLength = await bloodDonorCollection.find(query).toArray();
             const count = availableBloodLength.length;
             const pageCount = Math.ceil(count / limit)
@@ -210,9 +212,10 @@ async function run() {
         app.get('/unavailable-donor', verifyJWT, async (req, res) => {
             const limit = Number(req.query.limit);
             const skip = Number(req.query.pageNumber);
+            const mySort = { donateButtonClickTime: 1 }
             const status = "verified"
             const query = { status: status, available: false }
-            const verifiedDonor = await bloodDonorCollection.find(query).skip(limit * skip).limit(limit).toArray()
+            const verifiedDonor = await bloodDonorCollection.find(query).skip(limit * skip).limit(limit).sort(mySort).toArray()
             const unavailableBloodLength = await bloodDonorCollection.find(query).toArray();
             const count = unavailableBloodLength.length;
             const pageCount = Math.ceil(count / limit)
@@ -232,6 +235,7 @@ async function run() {
             const updateDoc = {
                 $set: {
                     status: donorInfo.status,
+                    acceptedTime: donorInfo.acceptedTime,
                     available: true,
                     donationCount: 0
                 }
@@ -243,13 +247,13 @@ async function run() {
         app.patch('/donationCount/:id', async (req, res) => {
             const id = req.params.id;
             const donationTime = req.body
-            console.log(donationTime);
             const filter = { _id: ObjectId(id) }
 
             const updateDoc = {
                 $set: {
                     available: false,
-                    time: donationTime.donateTime
+                    time: donationTime.donateTime,
+                    donateButtonClickTime: donationTime.donateButtonClickTime
                 },
                 $inc: {
                     donationCount: + 1
@@ -289,8 +293,9 @@ async function run() {
             const incompleteRequest = await bloodRequestCollection.find(query).skip(limit * skip).limit(limit).toArray();
             const incompleteBloodLength = await bloodRequestCollection.find(query).toArray();
             const count = incompleteBloodLength.length;
-            const pageCount = Math.ceil(count / limit);
             
+            const pageCount = Math.ceil(count / limit);
+
             res.send({ incompleteBloodRequestList: incompleteRequest, totalCount: count, pageCount: pageCount })
         })
         app.get('/complete-blood-request', verifyJWT, async (req, res) => {
@@ -303,7 +308,6 @@ async function run() {
             const completeBloodLength = await bloodRequestCollection.find(query).toArray()
             const count = completeBloodLength.length
             const pageCount = Math.ceil(count / limit)
-            console.log(pageCount, "complete");
             res.send({ completeBloodRequestList: completeRequest, totalCount: count, pageCount: pageCount })
         })
 
