@@ -324,10 +324,12 @@ async function run() {
         app.patch('/blood-request-status/:id', async (req, res) => {
             const id = req.params.id;
             const bloodRequestInfo = req.body
+            console.log(bloodRequestInfo);
             const filter = { _id: ObjectId(id) }
             const updateDoc = {
                 $set: {
-                    status: bloodRequestInfo.status
+                    status: bloodRequestInfo.status,
+                    submissionTime: bloodRequestInfo.submissionTime
                 }
             }
             const updatedBloodRequestInfo = await bloodRequestCollection.updateOne(filter, updateDoc)
