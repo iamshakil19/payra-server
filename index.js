@@ -54,7 +54,7 @@ async function run() {
 
         app.get('/all-admin', verifyJWT, async (req, res) => {
             const query = { role: { $in: ["admin", "superAdmin"] } }
-            const mySort = { email: 1 }
+            const mySort = { adminCreationTime: -1 }
             const allAdmin = await userCollection.find(query).sort(mySort).toArray()
             res.send(allAdmin)
         })
@@ -151,13 +151,14 @@ async function run() {
         })
 
         app.put('/user/admin/:email', verifyJWT, async (req, res) => {
+            const adminCreationTime = new Date()
             const email = req.params.email;
             const requester = req?.decoded?.email;
             const requesterAccount = await userCollection.findOne({ email: requester });
             if (requesterAccount.role === 'superAdmin') {
                 const filter = { email: email };
                 const updateDoc = {
-                    $set: { role: 'admin' },
+                    $set: { role: 'admin', adminCreationTime: adminCreationTime },
                 };
                 const result = await userCollection.updateOne(filter, updateDoc)
                 res.send(result)
