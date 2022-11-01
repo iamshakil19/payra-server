@@ -137,8 +137,8 @@ async function run() {
             const skip = Number(req.query.pageNumber);
             const userSearchData = req.query.userSearchData;
             const mySort = { email: 1 }
-            const users = await userCollection.find({$or: [{email: {$regex: userSearchData, $options: 'i'}}, {name:{$regex: userSearchData, $options: 'i'}}]}).skip(limit * skip).limit(limit).sort(mySort).toArray()
-            const userLength = await userCollection.find({$or: [{email: {$regex: userSearchData, $options: 'i'}}, {name:{$regex: userSearchData, $options: 'i'}}]}).toArray();
+            const users = await userCollection.find({ $or: [{ email: { $regex: userSearchData, $options: 'i' } }, { name: { $regex: userSearchData, $options: 'i' } }] }).skip(limit * skip).limit(limit).sort(mySort).toArray()
+            const userLength = await userCollection.find({ $or: [{ email: { $regex: userSearchData, $options: 'i' } }, { name: { $regex: userSearchData, $options: 'i' } }] }).toArray();
             const count = userLength.length
             const pageCount = Math.ceil(count / limit);
             res.send({ users: users, totalCount: count, pageCount: pageCount })
@@ -193,19 +193,38 @@ async function run() {
 
         app.get('/verified-donor', verifyJWT, async (req, res) => {
             const status = "verified"
-            const mySort = {acceptedTime: -1}
+            const mySort = { acceptedTime: -1 }
             const filter = { status: status }
             const verifiedDonor = await bloodDonorCollection.find(filter).sort(mySort).toArray()
             res.send(verifiedDonor)
         })
         app.get('/available-donor', verifyJWT, async (req, res) => {
-            const limit = Number(req.query.limit);
-            const skip = Number(req.query.pageNumber);
-            const userSortBy = req.query.sortByDonateCount;
-            const donorSearchData = req.query.donorSearchData;
+            const query = req.query
+            const limit = Number(query.limit);
+            const skip = Number(query.pageNumber);
+            const userSortBy = query.sortByDonateCount;
+            const donorSearchData = query.donorSearchData;
+
+            const policeStationFilterData = query.policeStationFilterData;
+            const unionFilterData = query.unionFilterData;
+            const villageFilterData = query.villageFilterData;
+            const bloodGroupFilterData = query.bloodGroupFilterData;
+            console.log(bloodGroupFilterData);
             const mySort = { [userSortBy]: -1 };
             const status = "verified";
-            const filter = { status: status, available: true, $or: [{name: {$regex: donorSearchData, $options: 'i'}}, {bloodGroup:{$regex: donorSearchData, $options: 'i'}}, {age:{$regex: donorSearchData, $options: 'i'}}, {union:{$regex: donorSearchData, $options: 'i'}}, {village:{$regex: donorSearchData, $options: 'i'}}] };
+            const filter = { status: status, available: true, $or: [{ name: { $regex: donorSearchData, $options: 'i' } }, { bloodGroup: { $regex: donorSearchData, $options: 'i' } }, { age: { $regex: donorSearchData, $options: 'i' } }, { union: { $regex: donorSearchData, $options: 'i' } }, { village: { $regex: donorSearchData, $options: 'i' } }, { gender: { $regex: donorSearchData, $options: 'i' } }] };
+            if (policeStationFilterData) {
+                filter.policeStation = policeStationFilterData
+            }
+            if (unionFilterData) {
+                filter.union = unionFilterData
+            }
+            if (villageFilterData) {
+                filter.village = villageFilterData
+            }
+            if (bloodGroupFilterData) {
+                filter.bloodGroup = bloodGroupFilterData
+            }
             const verifiedDonor = await bloodDonorCollection.find(filter).skip(limit * skip).limit(limit).sort(mySort).toArray();
             const availableBloodLength = await bloodDonorCollection.find(filter).toArray();
             const count = availableBloodLength.length;
@@ -218,7 +237,7 @@ async function run() {
             const donorSearchData = req.query.donorSearchData;
             const mySort = { donateButtonClickTime: 1 }
             const status = "verified"
-            const filter = { status: status, available: false, $or: [{name: {$regex: donorSearchData, $options: 'i'}}, {bloodGroup:{$regex: donorSearchData, $options: 'i'}}, {age:{$regex: donorSearchData, $options: 'i'}}, {union:{$regex: donorSearchData, $options: 'i'}}, {village:{$regex: donorSearchData, $options: 'i'}}] }
+            const filter = { status: status, available: false, $or: [{ name: { $regex: donorSearchData, $options: 'i' } }, { bloodGroup: { $regex: donorSearchData, $options: 'i' } }, { age: { $regex: donorSearchData, $options: 'i' } }, { union: { $regex: donorSearchData, $options: 'i' } }, { village: { $regex: donorSearchData, $options: 'i' } }, { gender: { $regex: donorSearchData, $options: 'i' } }] }
             const verifiedDonor = await bloodDonorCollection.find(filter).skip(limit * skip).limit(limit).sort(mySort).toArray()
             const unavailableBloodLength = await bloodDonorCollection.find(filter).toArray();
             const count = unavailableBloodLength.length;
@@ -228,7 +247,7 @@ async function run() {
 
         app.post('/donor-request', async (req, res) => {
             const donorRequest = req.body;
-            const result = await bloodDonorCollection.insertOne(donorRequest);
+            const result = await bloodDonorCollection.insertOne(donorRequest)
             res.send(result);
         })
 
@@ -297,7 +316,7 @@ async function run() {
             const incompleteRequest = await bloodRequestCollection.find(filter).skip(limit * skip).limit(limit).toArray();
             const incompleteBloodLength = await bloodRequestCollection.find(filter).toArray();
             const count = incompleteBloodLength.length;
-            
+
             const pageCount = Math.ceil(count / limit);
 
             res.send({ incompleteBloodRequestList: incompleteRequest, totalCount: count, pageCount: pageCount })
