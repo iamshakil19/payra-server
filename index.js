@@ -36,6 +36,40 @@ async function run() {
         const bloodRequestCollection = client.db('payra').collection('blood-request-list')
         const userCollection = client.db('payra').collection('users')
         const adminContactCollection = client.db('payra').collection('admin-contact')
+        const divisionCollection = client.db('payra').collection('divisions')
+        const districtCollection = client.db('payra').collection('districts')
+        const upazilaCollection = client.db('payra').collection('upazilas')
+
+
+        /* =======================
+            ALL Division API
+            ======================== */
+        app.get('/divisions', async (req, res) => {
+            const divisions = await divisionCollection.find().toArray()
+            res.send({ divisions: divisions })
+        })
+
+        /* =======================
+            ALL District API
+            ======================== */
+        app.get('/districts', async (req, res) => {
+            const districts = await districtCollection.find().toArray()
+            res.send({ districts: districts })
+        })
+
+        /* =======================
+            ALL Upazila API
+            ======================== */
+        app.get('/upazilas', async (req, res) => {
+            const upazilas = await upazilaCollection.find().toArray()
+            res.send({ upazilas: upazilas })
+        })
+        app.post('/upazilas', async (req, res) => {
+            const upazilasInfo = req.body;
+            const result = await upazilaCollection.insertOne(upazilasInfo);
+            res.send(result);
+        })
+
 
 
         /* =======================
@@ -200,21 +234,30 @@ async function run() {
         })
         app.get('/available-donor', verifyJWT, async (req, res) => {
             const query = req.query
+            console.log(query);
             const limit = Number(query.limit);
             const skip = Number(query.pageNumber);
             const userSortBy = query.sortByDonateCount;
             const donorSearchData = query.donorSearchData;
 
-            const policeStationFilterData = query.policeStationFilterData;
+            let divisionFilterData = query.divisionFilterData;
+            let districtFilterData = query.districtFilterData;
+            let upazilaFilterData = query.upazilaFilterData;
             const unionFilterData = query.unionFilterData;
             const villageFilterData = query.villageFilterData;
             const bloodGroupFilterData = query.bloodGroupFilterData;
-            console.log(bloodGroupFilterData);
+
             const mySort = { [userSortBy]: -1 };
             const status = "verified";
-            const filter = { status: status, available: true, $or: [{ name: { $regex: donorSearchData, $options: 'i' } }, { bloodGroup: { $regex: donorSearchData, $options: 'i' } }, { age: { $regex: donorSearchData, $options: 'i' } }, { union: { $regex: donorSearchData, $options: 'i' } }, { village: { $regex: donorSearchData, $options: 'i' } }, { gender: { $regex: donorSearchData, $options: 'i' } }] };
-            if (policeStationFilterData) {
-                filter.policeStation = policeStationFilterData
+            const filter = { status: status, available: true, $or: [{ name: { $regex: donorSearchData, $options: 'i' } }, { age: { $regex: donorSearchData, $options: 'i' } }, { district: { $regex: donorSearchData, $options: 'i' } }, { upazila: { $regex: donorSearchData, $options: 'i' } }, { union: { $regex: donorSearchData, $options: 'i' } }, { village: { $regex: donorSearchData, $options: 'i' } }, { gender: { $regex: donorSearchData, $options: 'i' } }] };
+            if (divisionFilterData) {
+                filter.division = divisionFilterData
+            }
+            if (districtFilterData) {
+                filter.district = districtFilterData
+            }
+            if (upazilaFilterData) {
+                filter.upazila = upazilaFilterData
             }
             if (unionFilterData) {
                 filter.union = unionFilterData
@@ -237,7 +280,7 @@ async function run() {
             const donorSearchData = req.query.donorSearchData;
             const mySort = { donateButtonClickTime: 1 }
             const status = "verified"
-            const filter = { status: status, available: false, $or: [{ name: { $regex: donorSearchData, $options: 'i' } }, { bloodGroup: { $regex: donorSearchData, $options: 'i' } }, { age: { $regex: donorSearchData, $options: 'i' } }, { union: { $regex: donorSearchData, $options: 'i' } }, { village: { $regex: donorSearchData, $options: 'i' } }, { gender: { $regex: donorSearchData, $options: 'i' } }] }
+            const filter = { status: status, available: false, $or: [{ name: { $regex: donorSearchData, $options: 'i' } }, { age: { $regex: donorSearchData, $options: 'i' } }, { union: { $regex: donorSearchData, $options: 'i' } }, { village: { $regex: donorSearchData, $options: 'i' } }, { gender: { $regex: donorSearchData, $options: 'i' } }] }
             const verifiedDonor = await bloodDonorCollection.find(filter).skip(limit * skip).limit(limit).sort(mySort).toArray()
             const unavailableBloodLength = await bloodDonorCollection.find(filter).toArray();
             const count = unavailableBloodLength.length;
