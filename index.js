@@ -39,6 +39,8 @@ async function run() {
         const divisionCollection = client.db('payra').collection('divisions')
         const districtCollection = client.db('payra').collection('districts')
         const upazilaCollection = client.db('payra').collection('upazilas')
+        const uninCollection = client.db('payra').collection('unions')
+        const villageCollection = client.db('payra').collection('villages')
 
 
         /* =======================
@@ -70,7 +72,32 @@ async function run() {
             res.send(result);
         })
 
+        /* =======================
+            ALL Union API
+            ======================== */
+        app.get('/unions', async (req, res) => {
+            const unions = await uninCollection.find().toArray()
+            res.send({ unions: unions })
+        })
+        app.post('/unions', async (req, res) => {
+            const unionsInfo = req.body;
+            const result = await uninCollection.insertOne(unionsInfo);
+            res.send(result);
+        })
 
+
+        /* =======================
+            ALL Village API
+            ======================== */
+            app.get('/villages', async (req, res) => {
+                const villages = await villageCollection.find().toArray()
+                res.send({ villages: villages })
+            })
+            app.post('/villages', async (req, res) => {
+                const villagesInfo = req.body;
+                const result = await villageCollection.insertOne(villagesInfo);
+                res.send(result);
+            })
 
         /* =======================
             ALL Admin API
@@ -240,9 +267,9 @@ async function run() {
             const userSortBy = query.sortByDonateCount;
             const donorSearchData = query.donorSearchData;
 
-            let divisionFilterData = query.divisionFilterData;
-            let districtFilterData = query.districtFilterData;
-            let upazilaFilterData = query.upazilaFilterData;
+            const divisionFilterData = query.divisionFilterData;
+            const districtFilterData = query.districtFilterData;
+            const upazilaFilterData = query.upazilaFilterData;
             const unionFilterData = query.unionFilterData;
             const villageFilterData = query.villageFilterData;
             const bloodGroupFilterData = query.bloodGroupFilterData;
