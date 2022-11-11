@@ -261,7 +261,6 @@ async function run() {
         })
         app.get('/available-donor', verifyJWT, async (req, res) => {
             const query = req.query
-            console.log(query);
             const limit = Number(query.limit);
             const skip = Number(query.pageNumber);
             const userSortBy = query.sortByDonateCount;
@@ -302,17 +301,58 @@ async function run() {
             res.send({ availableDonorList: verifiedDonor, totalCount: count, pageCount: pageCount });
         })
         app.get('/unavailable-donor', verifyJWT, async (req, res) => {
-            const limit = Number(req.query.limit);
-            const skip = Number(req.query.pageNumber);
-            const donorSearchData = req.query.donorSearchData;
-            const mySort = { donateButtonClickTime: 1 }
-            const status = "verified"
-            const filter = { status: status, available: false, $or: [{ name: { $regex: donorSearchData, $options: 'i' } }, { age: { $regex: donorSearchData, $options: 'i' } }, { union: { $regex: donorSearchData, $options: 'i' } }, { village: { $regex: donorSearchData, $options: 'i' } }, { gender: { $regex: donorSearchData, $options: 'i' } }] }
-            const verifiedDonor = await bloodDonorCollection.find(filter).skip(limit * skip).limit(limit).sort(mySort).toArray()
+            const query = req.query
+            const limit = Number(query.limit);
+            const skip = Number(query.pageNumber);
+            const userSortBy = query.sortByDonateCount;
+            let sortName = userSortBy.split(",")[0]
+            let orderBy = userSortBy.split(",")[1]
+            const donorSearchData = query.donorSearchData;
+
+            const divisionFilterData = query.divisionFilterData;
+            const districtFilterData = query.districtFilterData;
+            const upazilaFilterData = query.upazilaFilterData;
+            const unionFilterData = query.unionFilterData;
+            const villageFilterData = query.villageFilterData;
+            const bloodGroupFilterData = query.bloodGroupFilterData;
+
+            const mySort = { [sortName]: orderBy };
+            const status = "verified";
+
+            const filter = { status: status, available: false, $or: [{ name: { $regex: donorSearchData, $options: 'i' } }, { age: { $regex: donorSearchData, $options: 'i' } }, { district: { $regex: donorSearchData, $options: 'i' } }, { upazila: { $regex: donorSearchData, $options: 'i' } }, { union: { $regex: donorSearchData, $options: 'i' } }, { village: { $regex: donorSearchData, $options: 'i' } }, { gender: { $regex: donorSearchData, $options: 'i' } }] };
+            if (divisionFilterData) {
+                filter.division = divisionFilterData
+            }
+            if (districtFilterData) {
+                filter.district = districtFilterData
+            }
+            if (upazilaFilterData) {
+                filter.upazila = upazilaFilterData
+            }
+            if (unionFilterData) {
+                filter.union = unionFilterData
+            }
+            if (villageFilterData) {
+                filter.village = villageFilterData
+            }
+            if (bloodGroupFilterData) {
+                filter.bloodGroup = bloodGroupFilterData
+            }
+            const verifiedDonor = await bloodDonorCollection.find(filter).skip(limit * skip).limit(limit).sort(mySort).toArray();
             const unavailableBloodLength = await bloodDonorCollection.find(filter).toArray();
             const count = unavailableBloodLength.length;
-            const pageCount = Math.ceil(count / limit)
-            res.send({ unavailableDonorList: verifiedDonor, totalCount: count, pageCount: pageCount })
+            const pageCount = Math.ceil(count / limit);
+            res.send({ unavailableDonorList: verifiedDonor, totalCount: count, pageCount: pageCount });
+
+            // const mySort = { donateButtonClickTime: 1 }
+            // const status = "verified"
+            // const filter = { status: status, available: false, $or: [{ name: { $regex: donorSearchData, $options: 'i' } }, { age: { $regex: donorSearchData, $options: 'i' } }, { union: { $regex: donorSearchData, $options: 'i' } }, { village: { $regex: donorSearchData, $options: 'i' } }, { gender: { $regex: donorSearchData, $options: 'i' } }] }
+
+            // const verifiedDonor = await bloodDonorCollection.find(filter).skip(limit * skip).limit(limit).sort(mySort).toArray()
+            // const unavailableBloodLength = await bloodDonorCollection.find(filter).toArray();
+            // const count = unavailableBloodLength.length;
+            // const pageCount = Math.ceil(count / limit)
+            // res.send({ unavailableDonorList: verifiedDonor, totalCount: count, pageCount: pageCount })
         })
 
         app.post('/donor-request', async (req, res) => {
