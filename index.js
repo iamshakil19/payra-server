@@ -86,7 +86,7 @@ async function run() {
             ALL Union API
             ======================== */
         app.get('/unions', verifyJWT, async (req, res) => {
-            const query = req.query
+            const query = req.query;
             const limit = Number(query.unionLimit);
             const skip = Number(query.unionPageNumber);
             const unionSearchData = query.unionSearchData;
