@@ -39,7 +39,7 @@ async function run() {
         const divisionCollection = client.db('payra').collection('divisions')
         const districtCollection = client.db('payra').collection('districts')
         const upazilaCollection = client.db('payra').collection('upazilas')
-        const uninCollection = client.db('payra').collection('unions')
+        const unionCollection = client.db('payra').collection('unions')
         const villageCollection = client.db('payra').collection('villages')
 
 
@@ -62,42 +62,124 @@ async function run() {
         /* =======================
             ALL Upazila API
             ======================== */
+
         app.get('/upazilas', async (req, res) => {
-            const upazilas = await upazilaCollection.find().toArray()
-            res.send({ upazilas: upazilas })
+            const query = req.query
+            const limit = Number(query.upazilaLimit);
+            const skip = Number(query.upazilaPageNumber);
+            const upazilaSearchData = query.upazilaSearchData;
+            const mySort = { upazila_id: 1 }
+            const upazilas = await upazilaCollection.find({ $or: [{ name: { $regex: upazilaSearchData, $options: 'i' } }, { bn_name: { $regex: upazilaSearchData, $options: 'i' } }] }).skip(limit * skip).limit(limit).sort(mySort).toArray()
+            const upazilaLength = await upazilaCollection.find({ $or: [{ name: { $regex: upazilaSearchData, $options: 'i' } }, { bn_name: { $regex: upazilaSearchData, $options: 'i' } }] }).toArray()
+
+            const count = upazilaLength.length
+            const pageCount = Math.ceil(count / limit);
+            res.send({ upazilas: upazilas, totalCount: count, pageCount: pageCount })
         })
-        app.post('/upazilas', async (req, res) => {
-            const upazilasInfo = req.body;
-            const result = await upazilaCollection.insertOne(upazilasInfo);
-            res.send(result);
+
+        app.get('/upazilasForForm', async (req, res) => {
+            const upazilaForForm = await upazilaCollection.find().toArray();
+            res.send({ upazilas: upazilaForForm })
         })
 
         /* =======================
             ALL Union API
             ======================== */
-        app.get('/unions', async (req, res) => {
-            const unions = await uninCollection.find().toArray()
-            res.send({ unions: unions })
+        app.get('/unions', verifyJWT, async (req, res) => {
+            const query = req.query
+            const limit = Number(query.unionLimit);
+            const skip = Number(query.unionPageNumber);
+            const unionSearchData = query.unionSearchData;
+            const mySort = { union_id: 1 }
+            const unions = await unionCollection.find({ $or: [{ name: { $regex: unionSearchData, $options: 'i' } }, { bn_name: { $regex: unionSearchData, $options: 'i' } }] }).skip(limit * skip).limit(limit).sort(mySort).toArray()
+            const unionLength = await unionCollection.find({ $or: [{ name: { $regex: unionSearchData, $options: 'i' } }, { bn_name: { $regex: unionSearchData, $options: 'i' } }] }).toArray()
+            const count = unionLength.length
+            const pageCount = Math.ceil(count / limit);
+
+            res.send({ unions: unions, totalCount: count, pageCount: pageCount })
         })
-        app.post('/unions', async (req, res) => {
+
+        app.get('/unionsForForm', async (req, res) => {
+            const unionsForForm = await unionCollection.find().toArray();
+            res.send({ unions: unionsForForm })
+        })
+
+        app.post('/unions', verifyJWT, async (req, res) => {
             const unionsInfo = req.body;
-            const result = await uninCollection.insertOne(unionsInfo);
-            res.send(result);
+            const requester = req?.decoded?.email;
+            const requesterAccount = await userCollection.findOne({ email: requester });
+            if (requesterAccount.role === 'superAdmin') {
+                const result = await unionCollection.insertOne(unionsInfo);
+                res.send(result)
+            }
+            else {
+                res.status(403).send({ message: 'forbidden access' })
+            }
+        })
+
+        app.delete('/unions/:id', verifyJWT, async (req, res) => {
+            const id = req.params.id;
+            const requester = req?.decoded?.email;
+            const requesterAccount = await userCollection.findOne({ email: requester });
+            if (requesterAccount.role === 'superAdmin') {
+                const query = { _id: ObjectId(id) }
+                const result = await unionCollection.deleteOne(query)
+                res.send(result)
+            }
+            else {
+                res.status(403).send({ message: 'forbidden access' })
+            }
         })
 
 
         /* =======================
             ALL Village API
             ======================== */
-            app.get('/villages', async (req, res) => {
-                const villages = await villageCollection.find().toArray()
-                res.send({ villages: villages })
-            })
-            app.post('/villages', async (req, res) => {
-                const villagesInfo = req.body;
+        app.get('/villages', verifyJWT, async (req, res) => {
+            const query = req.query
+            const limit = Number(query.villageLimit);
+            const skip = Number(query.villagePageNumber);
+            const villageSearchData = query.villageSearchData;
+            const mySort = { union_id: 1, name: 1 }
+            const villages = await villageCollection.find({ $or: [{ name: { $regex: villageSearchData, $options: 'i' } }, { bn_name: { $regex: villageSearchData, $options: 'i' } }] }).skip(limit * skip).limit(limit).sort(mySort).toArray()
+            const villageLength = await villageCollection.find({ $or: [{ name: { $regex: villageSearchData, $options: 'i' } }, { bn_name: { $regex: villageSearchData, $options: 'i' } }] }).toArray()
+            const count = villageLength.length
+            const pageCount = Math.ceil(count / limit);
+
+            res.send({ villages: villages, totalCount: count, pageCount: pageCount })
+        })
+
+        app.get('/villagesForForm', async (req, res) => {
+            const villageForForm = await villageCollection.find().toArray();
+            res.send({ villages: villageForForm })
+        })
+
+        app.post('/villages', verifyJWT, async (req, res) => {
+            const villagesInfo = req.body;
+            const requester = req?.decoded?.email;
+            const requesterAccount = await userCollection.findOne({ email: requester });
+            if (requesterAccount.role === 'superAdmin') {
                 const result = await villageCollection.insertOne(villagesInfo);
-                res.send(result);
-            })
+                res.send(result)
+            }
+            else {
+                res.status(403).send({ message: 'forbidden access' })
+            }
+        })
+
+        app.delete('/villages/:id', verifyJWT, async (req, res) => {
+            const id = req.params.id;
+            const requester = req?.decoded?.email;
+            const requesterAccount = await userCollection.findOne({ email: requester });
+            if (requesterAccount.role === 'superAdmin') {
+                const query = { _id: ObjectId(id) }
+                const result = await villageCollection.deleteOne(query)
+                res.send(result)
+            }
+            else {
+                res.status(403).send({ message: 'forbidden access' })
+            }
+        })
 
         /* =======================
             ALL Admin API
@@ -141,7 +223,6 @@ async function run() {
             else {
                 res.status(403).send({ message: 'forbidden access' })
             }
-
         })
 
         app.patch('/contact/:id', async (req, res) => {
@@ -259,12 +340,12 @@ async function run() {
             const verifiedDonor = await bloodDonorCollection.find(filter).sort(mySort).toArray()
             res.send(verifiedDonor)
         })
-        app.get('/available-donor', verifyJWT, async (req, res) => {
+        app.get('/available-donor', async (req, res) => {
             const query = req.query
             const limit = Number(query.limit);
             const skip = Number(query.pageNumber);
             const userSortBy = query.sortByDonateCount;
-            const donorSearchData = query.donorSearchData;
+            const donorSearchData = String(query.donorSearchData)
 
             const divisionFilterData = query.divisionFilterData;
             const districtFilterData = query.districtFilterData;
@@ -275,7 +356,8 @@ async function run() {
 
             const mySort = { [userSortBy]: -1 };
             const status = "verified";
-            const filter = { status: status, available: true, $or: [{ name: { $regex: donorSearchData, $options: 'i' } }, { age: { $regex: donorSearchData, $options: 'i' } }, { district: { $regex: donorSearchData, $options: 'i' } }, { upazila: { $regex: donorSearchData, $options: 'i' } }, { union: { $regex: donorSearchData, $options: 'i' } }, { village: { $regex: donorSearchData, $options: 'i' } }, { gender: { $regex: donorSearchData, $options: 'i' } }] };
+
+            const filter = { status: status, available: true, $or: [{ name: { $regex: donorSearchData, $options: 'i' } }, { age: { $regex: donorSearchData, $options: 'i' } }, { district: { $regex: donorSearchData, $options: 'i' } }, { upazila: { $regex: donorSearchData, $options: 'i' } }, { union: { $regex: donorSearchData, $options: 'i' } }, { village: { $regex: donorSearchData, $options: 'i' } }, { gender: { $regex: donorSearchData, $options: 'i' } }, { number1: { $regex: donorSearchData, $options: 'i' } }] };
             if (divisionFilterData) {
                 filter.division = divisionFilterData
             }
@@ -298,6 +380,7 @@ async function run() {
             const availableBloodLength = await bloodDonorCollection.find(filter).toArray();
             const count = availableBloodLength.length;
             const pageCount = Math.ceil(count / limit);
+
             res.send({ availableDonorList: verifiedDonor, totalCount: count, pageCount: pageCount });
         })
         app.get('/unavailable-donor', verifyJWT, async (req, res) => {
@@ -307,7 +390,7 @@ async function run() {
             const userSortBy = query.sortByDonateCount;
             let sortName = userSortBy.split(",")[0]
             let orderBy = userSortBy.split(",")[1]
-            const donorSearchData = query.donorSearchData;
+            const donorSearchData = String(query.donorSearchData)
 
             const divisionFilterData = query.divisionFilterData;
             const districtFilterData = query.districtFilterData;
@@ -319,7 +402,7 @@ async function run() {
             const mySort = { [sortName]: orderBy };
             const status = "verified";
 
-            const filter = { status: status, available: false, $or: [{ name: { $regex: donorSearchData, $options: 'i' } }, { age: { $regex: donorSearchData, $options: 'i' } }, { district: { $regex: donorSearchData, $options: 'i' } }, { upazila: { $regex: donorSearchData, $options: 'i' } }, { union: { $regex: donorSearchData, $options: 'i' } }, { village: { $regex: donorSearchData, $options: 'i' } }, { gender: { $regex: donorSearchData, $options: 'i' } }] };
+            const filter = { status: status, available: false, $or: [{ name: { $regex: donorSearchData, $options: 'i' } }, { age: { $regex: donorSearchData, $options: 'i' } }, { district: { $regex: donorSearchData, $options: 'i' } }, { upazila: { $regex: donorSearchData, $options: 'i' } }, { union: { $regex: donorSearchData, $options: 'i' } }, { village: { $regex: donorSearchData, $options: 'i' } }, { gender: { $regex: donorSearchData, $options: 'i' } }, { number1: { $regex: donorSearchData, $options: 'i' } }] };
             if (divisionFilterData) {
                 filter.division = divisionFilterData
             }
@@ -343,16 +426,6 @@ async function run() {
             const count = unavailableBloodLength.length;
             const pageCount = Math.ceil(count / limit);
             res.send({ unavailableDonorList: verifiedDonor, totalCount: count, pageCount: pageCount });
-
-            // const mySort = { donateButtonClickTime: 1 }
-            // const status = "verified"
-            // const filter = { status: status, available: false, $or: [{ name: { $regex: donorSearchData, $options: 'i' } }, { age: { $regex: donorSearchData, $options: 'i' } }, { union: { $regex: donorSearchData, $options: 'i' } }, { village: { $regex: donorSearchData, $options: 'i' } }, { gender: { $regex: donorSearchData, $options: 'i' } }] }
-
-            // const verifiedDonor = await bloodDonorCollection.find(filter).skip(limit * skip).limit(limit).sort(mySort).toArray()
-            // const unavailableBloodLength = await bloodDonorCollection.find(filter).toArray();
-            // const count = unavailableBloodLength.length;
-            // const pageCount = Math.ceil(count / limit)
-            // res.send({ unavailableDonorList: verifiedDonor, totalCount: count, pageCount: pageCount })
         })
 
         app.post('/donor-request', async (req, res) => {
@@ -453,7 +526,7 @@ async function run() {
         app.patch('/blood-request-status/:id', async (req, res) => {
             const id = req.params.id;
             const bloodRequestInfo = req.body
-            console.log(bloodRequestInfo);
+
             const filter = { _id: ObjectId(id) }
             const updateDoc = {
                 $set: {
