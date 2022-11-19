@@ -340,6 +340,7 @@ async function run() {
             const verifiedDonor = await bloodDonorCollection.find(filter).sort(mySort).toArray()
             res.send(verifiedDonor)
         })
+        
         app.get('/available-donor', async (req, res) => {
             const query = req.query
             const limit = Number(query.limit);
@@ -448,6 +449,26 @@ async function run() {
             }
             const updatedDonorInfo = await bloodDonorCollection.updateOne(filter, updateDoc)
             res.send(updateDoc)
+        })
+
+        app.patch('/donorInfo/:id', async (req, res) => {
+            const id = req.params.id;
+            const donorInfo = req.body
+            const filter = { _id: ObjectId(id) }
+            console.log(donorInfo);
+            const updateDoc = {
+                $set: {
+                    name: donorInfo.name,
+                    bloodGroup: donorInfo.bloodGroup,
+                    bloodGroup: donorInfo.bloodGroup,
+                    number1: donorInfo.number1,
+                    number2: donorInfo.number2,
+                    gender: donorInfo.gender,
+                    donationCount: donorInfo.donationCount,
+                }
+            }
+            const updatedDonorInfo = await bloodDonorCollection.updateOne(filter, updateDoc)
+            res.send({updateDoc, success: true})
         })
 
         app.patch('/donationCount/:id', async (req, res) => {
