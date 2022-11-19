@@ -340,7 +340,7 @@ async function run() {
             const verifiedDonor = await bloodDonorCollection.find(filter).sort(mySort).toArray()
             res.send(verifiedDonor)
         })
-        
+
         app.get('/available-donor', async (req, res) => {
             const query = req.query
             const limit = Number(query.limit);
@@ -473,14 +473,15 @@ async function run() {
 
         app.patch('/donationCount/:id', async (req, res) => {
             const id = req.params.id;
-            const donationTime = req.body
-            const filter = { _id: ObjectId(id) }
+            const donationTime = req.body;
+            const filter = { _id: ObjectId(id) };
 
             const updateDoc = {
                 $set: {
                     available: false,
                     time: donationTime.donateTime,
-                    donateButtonClickTime: donationTime.donateButtonClickTime
+                    donateButtonClickTime: donationTime.donateButtonClickTime,
+                    note: donationTime.note
                 },
                 $inc: {
                     donationCount: + 1
@@ -495,7 +496,8 @@ async function run() {
             const filter = { _id: ObjectId(id) }
             const updateDoc = {
                 $set: {
-                    available: true
+                    available: true,
+                    note: 0
                 }
             }
             const updatedDonorInfo = await bloodDonorCollection.updateOne(filter, updateDoc)
