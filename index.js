@@ -190,9 +190,19 @@ async function run() {
             res.send(result);
         })
 
-        app.get('/contacts', async (req, res) => {
+        app.get('/contacts/dashboard', async (req, res) => {
             const contacts = await adminContactCollection.find().toArray()
             res.send(contacts)
+        })
+        app.get('/contacts', async (req, res) => {
+            const query = req.query
+            const limit = 6
+            const skip = Number(query.pageNumber);
+            console.log(skip);
+            const contacts = await adminContactCollection.find().skip(limit * skip).limit(limit).toArray()
+            const count = await adminContactCollection.countDocuments()
+            const pageCount = Math.ceil(count / limit);
+            res.send({contacts: contacts, pageCount: pageCount})
         })
 
         app.get('/all-admin', verifyJWT, async (req, res) => {
@@ -315,7 +325,7 @@ async function run() {
             ALL BLOOD DONOR API
             ======================== */
 
-        app.get('/top-donor', verifyJWT, async (req, res) => {
+        app.get('/top-donor', async (req, res) => {
             const sortDonor = { donationCount: -1 }
             const topDonor = await bloodDonorCollection.find().sort(sortDonor).toArray()
             res.send(topDonor)
