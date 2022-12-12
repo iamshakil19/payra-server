@@ -198,7 +198,6 @@ async function run() {
             const query = req.query
             const limit = 6
             const skip = Number(query.pageNumber);
-            console.log(skip);
             const contacts = await adminContactCollection.find().skip(limit * skip).limit(limit).toArray()
             const count = await adminContactCollection.countDocuments()
             const pageCount = Math.ceil(count / limit);
@@ -326,8 +325,10 @@ async function run() {
             ======================== */
 
         app.get('/top-donor', async (req, res) => {
+            const status = "verified"
+            const filter = { status: status }
             const sortDonor = { donationCount: -1 }
-            const topDonor = await bloodDonorCollection.find().sort(sortDonor).toArray()
+            const topDonor = await bloodDonorCollection.find(filter).sort(sortDonor).toArray()
             res.send(topDonor)
         })
 
