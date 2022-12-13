@@ -82,6 +82,23 @@ async function run() {
             res.send({ upazilas: upazilaForForm })
         })
 
+        app.patch('/upazilas/:id', verifyJWT, async (req, res) => {
+            const id = req.params.id;
+            const { name, bn_name, district_id, upazila_id } = req.body
+            const filter = { _id: ObjectId(id) }
+
+            const updateDoc = {
+                $set: {
+                    name: name,
+                    bn_name: bn_name,
+                    upazila_id: upazila_id,
+                    district_id: district_id,
+                }
+            }
+            const updatedDonorInfo = await upazilaCollection.updateOne(filter, updateDoc)
+            res.send({ updateDoc, success: true })
+        })
+
         /* =======================
             ALL Union API
             ======================== */
@@ -115,6 +132,23 @@ async function run() {
             else {
                 res.status(403).send({ message: 'forbidden access' })
             }
+        })
+
+        app.patch('/unions/:id', verifyJWT, async (req, res) => {
+            const id = req.params.id;
+            const { name, bn_name, district_id, upazila_id } = req.body
+            const filter = { _id: ObjectId(id) }
+
+            const updateDoc = {
+                $set: {
+                    name: name,
+                    bn_name: bn_name,
+                    upazila_id: upazila_id,
+                    district_id: district_id,
+                }
+            }
+            const updatedDonorInfo = await unionCollection.updateOne(filter, updateDoc)
+            res.send({ updateDoc, success: true })
         })
 
         app.delete('/unions/:id', verifyJWT, async (req, res) => {
@@ -201,7 +235,7 @@ async function run() {
             const contacts = await adminContactCollection.find().skip(limit * skip).limit(limit).toArray()
             const count = await adminContactCollection.countDocuments()
             const pageCount = Math.ceil(count / limit);
-            res.send({contacts: contacts, pageCount: pageCount})
+            res.send({ contacts: contacts, pageCount: pageCount })
         })
 
         app.get('/all-admin', verifyJWT, async (req, res) => {
@@ -479,7 +513,7 @@ async function run() {
                 }
             }
             const updatedDonorInfo = await bloodDonorCollection.updateOne(filter, updateDoc)
-            res.send({updateDoc, success: true})
+            res.send({ updateDoc, success: true })
         })
 
         app.patch('/donationCount/:id', async (req, res) => {
