@@ -136,7 +136,8 @@ async function run() {
 
         app.patch('/unions/:id', verifyJWT, async (req, res) => {
             const id = req.params.id;
-            const { name, bn_name, district_id, upazila_id } = req.body
+            const { name, bn_name, union_id, upazila_id } = req.body
+            console.log(req.body);
             const filter = { _id: ObjectId(id) }
 
             const updateDoc = {
@@ -144,7 +145,7 @@ async function run() {
                     name: name,
                     bn_name: bn_name,
                     upazila_id: upazila_id,
-                    district_id: district_id,
+                    union_id: union_id,
                 }
             }
             const updatedDonorInfo = await unionCollection.updateOne(filter, updateDoc)
@@ -199,6 +200,23 @@ async function run() {
             else {
                 res.status(403).send({ message: 'forbidden access' })
             }
+        })
+
+        app.patch('/villages/:id', verifyJWT, async (req, res) => {
+            const id = req.params.id;
+            const { name, bn_name, union_id} = req.body
+
+            const filter = { _id: ObjectId(id) }
+
+            const updateDoc = {
+                $set: {
+                    name: name,
+                    bn_name: bn_name,
+                    union_id: union_id,
+                }
+            }
+            const updatedDonorInfo = await villageCollection.updateOne(filter, updateDoc)
+            res.send({ updateDoc, success: true })
         })
 
         app.delete('/villages/:id', verifyJWT, async (req, res) => {
